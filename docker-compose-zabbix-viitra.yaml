@@ -18,7 +18,6 @@ services:
       - ./zbx_env/var/lib/zabbix/snmptraps:/var/lib/zabbix/snmptraps:ro
     links:
       - postgres-server:postgres-server
-      - zabbix-java-gateway:zabbix-java-gateway
     ulimits:
       nproc: 65535
       nofile:
@@ -41,8 +40,6 @@ services:
     user: root
     depends_on:
       - postgres-server
-      - zabbix-java-gateway
-      - zabbix-snmptraps
     networks:
       zbx_net_backend:
         aliases:
@@ -217,91 +214,6 @@ services:
       com.zabbix.component: "zabbix-agentd"
       com.zabbix.os: "centos"
 
-  zabbix-java-gateway:
-    build: ./java-gateway/centos
-    image: zabbix-java-gateway:centos-local
-    ports:
-      - "10052:10052"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 512M
-        reservations:
-          cpus: "0.25"
-          memory: 256M
-    env_file:
-      - .env_java
-    user: root
-    networks:
-      zbx_net_backend:
-        aliases:
-          - zabbix-java-gateway
-          - zabbix-java-gateway-centos
-    stop_grace_period: 5s
-    labels:
-      com.zabbix.description: "Zabbix Java Gateway"
-      com.zabbix.company: "Zabbix LLC"
-      com.zabbix.component: "java-gateway"
-      com.zabbix.os: "centos"
-
-  zabbix-snmptraps:
-    build:
-      context: ./snmptraps/centos
-      cache_from:
-        - centos:centos7
-    image: zabbix-snmptraps:centos-local
-    ports:
-      - "162:162/udp"
-    volumes:
-      - ./zbx_env/var/lib/zabbix/snmptraps:/var/lib/zabbix/snmptraps:rw
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 256M
-        reservations:
-          cpus: "0.25"
-          memory: 128M
-    user: root
-    networks:
-      zbx_net_frontend:
-        aliases:
-          - zabbix-snmptraps
-      zbx_net_backend:
-    stop_grace_period: 5s
-    labels:
-      com.zabbix.description: "Zabbix snmptraps"
-      com.zabbix.company: "Zabbix LLC"
-      com.zabbix.component: "snmptraps"
-      com.zabbix.os: "ubuntu"
-
-  mysql-server:
-    image: mysql:8.0
-    command:
-      [
-        mysqld,
-        --character-set-server=utf8,
-        --collation-server=utf8_bin,
-        --default-authentication-plugin=mysql_native_password,
-      ]
-    volumes:
-      - ./zbx_env/var/lib/mysql:/var/lib/mysql:rw
-    env_file:
-      - .env_db_mysql
-    secrets:
-      - MYSQL_USER
-      - MYSQL_PASSWORD
-      - MYSQL_ROOT_PASSWORD
-    user: root
-    stop_grace_period: 1m
-    networks:
-      zbx_net_backend:
-        aliases:
-          - mysql-server
-          - zabbix-database
-          - mysql-database
-
   postgres-server:
     image: postgres:latest
     volumes:
@@ -319,11 +231,6 @@ services:
           - postgres-server
           - pgsql-server
           - pgsql-database
-
-  db_data_mysql:
-    image: busybox
-    volumes:
-      - ./zbx_env/var/lib/mysql:/var/lib/mysql:rw
 
   db_data_pgsql:
     image: busybox
