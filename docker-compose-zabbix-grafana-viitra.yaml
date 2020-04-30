@@ -237,6 +237,14 @@ services:
     volumes:
       - ./zbx_env/var/lib/postgresql/data:/var/lib/postgresql/data:rw
 
+  grafana:
+    image: grafana/grafana
+    user: "1001"
+    environment:
+      - GF_INSTALL_PLUGINS=alexanderzobnin-zabbix-app
+    ports:
+      - 3000:3000
+
 # elasticsearch:
 #  image: elasticsearch
 #  environment:
